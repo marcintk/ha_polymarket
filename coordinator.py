@@ -16,6 +16,7 @@ from .utils import parse_str, parse_str_if, parse_float_if, parse_float, parse_f
 class EventsData:
     scene: str
     query_count: int
+    query_failed: int
     query_url: str
     timestamp: datetime
     events: list[EventData] = field(default_factory=list)
@@ -52,7 +53,7 @@ class MarketData:
 class PolyMarketDataUpdateCoordinator(DataUpdateCoordinator[EventsData]):
     def __init__(self, hass: HomeAssistant, query: PolyMarketQuery) -> None:
         self._query: PolyMarketQuery = query
-        self._query_count: int = 0
+        self._api: PolymarketApi = PolymarketApi()
 
         super().__init__(
             hass,
@@ -71,22 +72,20 @@ class PolyMarketDataUpdateCoordinator(DataUpdateCoordinator[EventsData]):
         """
         LOGGER.debug(f"Polymarket --_async_setup-- {self.name}")
 
-        self._query_count = -100
-
     async def _async_update_data(self) -> EventsData:
         """Do the usual update
 
         This method will be called automatically every SCAN_INTERVAL.
         """
-        LOGGER.debug(f"Polymarket {self.name} --_async_update_data-- {self._query_count}")
+        LOGGER.debug(f"Polymarket {self.name} --_async_update_data-- {self._api.query_count()}")
 
-        self._query_count += 1
         scene, url = self._query.api_url(update_next=True)
-        json_events: dict = await PolymarketApi(url).async_get_json()
+        json_events: dict = await PolymarketApi().async_get_json(url)
 
         data = EventsData(
             scene=scene,
-            query_count=self._query_count, 
+            query_count=self._api.query_count(),
+            query_failed=self._api.query_failed(),
             query_url=url, 
             timestamp=datetime.now())
 

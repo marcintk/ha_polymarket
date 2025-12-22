@@ -106,6 +106,7 @@ class PolymarketSensor(CoordinatorEntity[PolyMarketDataUpdateCoordinator], Senso
         attrs["scene"] = data.scene
         attrs["url"] = data.query_url
         attrs["queryCount"] = data.query_count
+        attrs["queryFailed"] = data.query_failed
         attrs["timestamp"] = data.timestamp
 
         events = []
