@@ -39,15 +39,16 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Optional(CONF_REFRESH, default=5): vol.Coerce(int),
     vol.Optional(CONF_LIMIT, default=5): vol.Coerce(int),
     vol.Optional(CONF_SCENES, default=[]): vol.All(
-        cv.ensure_list,[
+        cv.ensure_list,
+        [vol.Schema({
             vol.Required(CONF_SCENE_NAME): cv.string,
-            vol.Required(CONF_SCENE_TAG_SLUG): cv.string,
+            vol.Optional(CONF_SCENE_TAG_SLUG): cv.string,
             vol.Optional(CONF_SCENE_EXCLUDE_TAG_IDS, default=[]): vol.All(
                 cv.ensure_list,
-                [cv.string]
-            )
-        ]
-    )
+                [cv.string],
+            ),
+        })]
+    ),
 })
 
 async def async_setup_platform(
@@ -102,7 +103,8 @@ class PolymarketSensor(CoordinatorEntity[PolyMarketDataUpdateCoordinator], Senso
         attrs = {}
         attrs[ATTR_ATTRIBUTION] = ATTRIBUTION
         attrs["domain"] = DOMAIN
-        attrs["url"] = self.data.query_url
+        attrs["scene"] = data.scene
+        attrs["url"] = data.query_url
         attrs["queryCount"] = data.query_count
         attrs["timestamp"] = data.timestamp
 

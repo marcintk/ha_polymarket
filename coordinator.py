@@ -14,6 +14,7 @@ from .utils import parse_str, parse_str_if, parse_float_if, parse_float, parse_f
 
 @dataclass
 class EventsData:
+    scene: str
     query_count: int
     query_url: str
     timestamp: datetime
@@ -80,11 +81,12 @@ class PolyMarketDataUpdateCoordinator(DataUpdateCoordinator[EventsData]):
         LOGGER.debug(f"Polymarket {self.name} --_async_update_data-- {self._query_count}")
 
         self._query_count += 1
-        url: str = self._query.api_url(update_next=true)
+        scene, url = self._query.api_url(update_next=True)
         json_events: dict = await PolymarketApi(url).async_get_json()
 
         data = EventsData(
-            query_count=self.query_count, 
+            scene=scene,
+            query_count=self._query_count, 
             query_url=url, 
             timestamp=datetime.now())
 
@@ -95,7 +97,7 @@ class PolyMarketDataUpdateCoordinator(DataUpdateCoordinator[EventsData]):
             if active and endsAt is not None:
                 title = json_event["title"]
                 markets = [self._update_market_data(item) for item in json_event["markets"]]
-                markets = sorted(filter(lambda m: m.volume24hr>0, markets), key=lambda entry: entry.winPrice, reverse=True)
+                markets = sorted(filter(lambda m: m.volume_24hr>0, markets), key=lambda entry: entry.win_price, reverse=True)
 
                 data.append(EventData(
                     active=active,
