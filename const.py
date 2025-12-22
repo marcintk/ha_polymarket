@@ -7,8 +7,14 @@ from typing import Final
 import logging
 
 # Config
+CONF_NAME = "name"
+CONF_UNIQUE_ID = "unique_id"
+CONF_REFRESH = "refresh"
 CONF_LIMIT = "limit"
-CONF_EXCLUDE_TAG_IDS = "exclude_tag_ids"
+CONF_SCENES = "scenes"
+CONF_SCENE_NAME = "name"
+CONF_SCENE_TAG_SLUG = "tag_slug"
+CONF_SCENE_EXCLUDE_TAG_IDS = "exclude_tag_ids"
 
 ATTRIBUTION = "Data provided by Polymarket"
 DOMAIN: Final = "polymarket"

@@ -18,15 +18,36 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from typing import Any, Final
 
 from .coordinator import PolyMarketDataUpdateCoordinator, EventsData, EventData, MarketData
-from .const import DOMAIN, ATTRIBUTION, LOGGER, CONF_EXCLUDE_TAG_IDS, CONF_LIMIT
+from .const import (
+    ATTRIBUTION,
+    CONF_NAME,
+    CONF_UNIQUE_ID,
+    CONF_REFRESH,
+    CONF_LIMIT,
+    CONF_SCENES,
+    CONF_SCENE_NAME,
+    CONF_SCENE_TAG_SLUG,
+    CONF_SCENE_EXCLUDE_TAG_IDS,
+    DOMAIN,
+    LOGGER
+)
 from .query import PolyMarketQuery
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
+    vol.Required(CONF_NAME): cv.string,
+    vol.Required(CONF_UNIQUE_ID): cv.string,
+    vol.Optional(CONF_REFRESH, default=5): vol.Coerce(int),
     vol.Optional(CONF_LIMIT, default=5): vol.Coerce(int),
-    vol.Optional(CONF_EXCLUDE_TAG_IDS, default=[]): vol.All(
-                    cv.ensure_list,
-                    [cv.string]
-                ),
+    vol.Optional(CONF_SCENES, default=[]): vol.All(
+        cv.ensure_list,[
+            vol.Required(CONF_SCENE_NAME): cv.string,
+            vol.Required(CONF_SCENE_TAG_SLUG): cv.string,
+            vol.Optional(CONF_SCENE_EXCLUDE_TAG_IDS, default=[]): vol.All(
+                cv.ensure_list,
+                [cv.string]
+            )
+        ]
+    )
 })
 
 async def async_setup_platform(
@@ -47,7 +68,7 @@ async def async_setup_platform(
     coordinator = PolyMarketDataUpdateCoordinator(hass, query)
     await coordinator.async_refresh()
 
-    sensor = PolymarketSensor(coordinator, query)
+    sensor = PolymarketSensor(coordinator, query.name(), query.unique_id())
     async_add_entities([sensor], update_before_add=False)
 
     LOGGER.info(f"Polymarket sensor addd: {query}.")
@@ -56,11 +77,11 @@ async def async_setup_platform(
 class PolymarketSensor(CoordinatorEntity[PolyMarketDataUpdateCoordinator], SensorEntity):
     """Representation of an Polymarket."""
 
-    def __init__(self, coordinator: PolyMarketDataUpdateCoordinator, query: PolyMarketQuery) -> None:
+    def __init__(self, coordinator: PolyMarketDataUpdateCoordinator, name: str, unique_id: str) -> None:
         """Initialize an Polymarket."""
         super().__init__(coordinator)
-        self._name = query.name()
-        self._url = query.api_url()
+        self._name: str = name
+        self._unique_id: str = unique_id
 
     @property
     def name(self) -> str:
@@ -70,7 +91,7 @@ class PolymarketSensor(CoordinatorEntity[PolyMarketDataUpdateCoordinator], Senso
     @property
     def unique_id(self) -> str:
         """Return a unique ID."""
-        return self._name
+        return self._unique_id
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -81,8 +102,8 @@ class PolymarketSensor(CoordinatorEntity[PolyMarketDataUpdateCoordinator], Senso
         attrs = {}
         attrs[ATTR_ATTRIBUTION] = ATTRIBUTION
         attrs["domain"] = DOMAIN
-        attrs["url"] = self._url
-        attrs["queryCount"] = data.queryCount
+        attrs["url"] = self.data.query_url
+        attrs["queryCount"] = data.query_count
         attrs["timestamp"] = data.timestamp
 
         events = []
@@ -93,10 +114,10 @@ class PolymarketSensor(CoordinatorEntity[PolyMarketDataUpdateCoordinator], Senso
             event_attrs["title"] = event.title
             event_attrs["icon"] = event.icon
             event_attrs["volume"] = event.volume
-            event_attrs["volume24hr"] = event.volume24hr
+            event_attrs["volume24hr"] = event.volume_24hr
             event_attrs["liquidity"] = event.liquidity
-            event_attrs["endsAt"] = event.endsAt
-            event_attrs["updatedAt"] = event.updatedAt
+            event_attrs["endsAt"] = event.ends_at
+            event_attrs["updatedAt"] = event.updated_at
 
             markets = []
             for market in event.markets:
@@ -105,10 +126,10 @@ class PolymarketSensor(CoordinatorEntity[PolyMarketDataUpdateCoordinator], Senso
                 market_attrs["closed"] = market.closed
                 market_attrs["title"] = market.title
                 market_attrs["volume"] = market.volume
-                market_attrs["volume24hr"] = market.volume24hr
+                market_attrs["volume24hr"] = market.volume_24hr
                 market_attrs["liquidity"] = market.liquidity
-                market_attrs["winPrice"] = market.winPrice
-                market_attrs["updatedAt"] = market.updatedAt
+                market_attrs["winPrice"] = market.win_price
+                market_attrs["updatedAt"] = market.updated_at
                 markets.append(market_attrs)
 
             event_attrs["markets"] = markets
