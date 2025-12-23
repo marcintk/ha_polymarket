@@ -80,7 +80,7 @@ class PolyMarketDataUpdateCoordinator(DataUpdateCoordinator[EventsData]):
         LOGGER.debug(f"Polymarket {self.name} --_async_update_data-- {self._api.query_count()}")
 
         scene, url = self._query.api_url(update_next=True)
-        json_events: dict = await PolymarketApi().async_get_json(url)
+        json_events: dict = await self._api.async_get_json(url)
 
         data = EventsData(
             scene=scene,
