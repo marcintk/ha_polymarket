@@ -16,20 +16,29 @@ USER_AGENT = (
 class PolymarketApi:
     headers: dict = {"User-Agent": USER_AGENT, "Accept": "application/ld+json"}
 
-    def __init__(self, url: str) -> None:
-        self._url: str = url
+    def __init__(self) -> None:
+        self._query_count: int = 0
+        self._query_failed: int = 0
         self._session = None
 
-    async def async_get_json(self) -> dict:
+    def query_count(self) -> int:
+        return self._query_count
+
+    def query_failed(self) -> int:
+        return self._query_failed
+
+    async def async_get_json(self, url: str) -> dict:
         """Get and Fetch the JSON data."""
-        LOGGER.debug("Calling API: '%s'...", self._url)
+        LOGGER.debug("Calling API: '%s'...", url)
 
         try:
+            self._query_count += 1
+
             if self._session == None:
                 self._session: ClientSession = aiohttp.ClientSession()
 
-            async with self._session.get(self._url, headers=self.headers) as response:
-                LOGGER.debug("Awaitng API response from %s...", self._url)
+            async with self._session.get(url, headers=self.headers) as response:
+                LOGGER.debug("Awaitng API response from %s...", url)
 
                 result_json = await response.json()
 
@@ -39,10 +48,11 @@ class PolymarketApi:
                     LOGGER.warn(
                         "Received status %d for %s, result=%s",
                         response.status,
-                        self._url,
+                        url,
                         result_json)
         except Exception as e:
             self._session = None
+            self._query_failed += 1
 
             LOGGER.warn("API call failed: %s", e)
 

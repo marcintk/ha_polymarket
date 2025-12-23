@@ -8,15 +8,16 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .api import PolymarketApi
-from .const import DOMAIN, LOGGER
+from .const import LOGGER
 from .query import PolyMarketQuery
-from .utils import parse_float_if, parse_float, parse_float_from_list_if, parse_float_from_list
-
-SCAN_INTERVAL = 5
+from .utils import parse_str, parse_str_if, parse_float_if, parse_float, parse_float_from_list_if, parse_float_from_list
 
 @dataclass
 class EventsData:
-    queryCount: int
+    scene: str
+    query_count: int
+    query_failed: int
+    query_url: str
     timestamp: datetime
     events: list[EventData] = field(default_factory=list)
 
@@ -30,10 +31,10 @@ class EventData:
     title: str
     icon: str
     volume: float
-    volume24hr: float
+    volume_24hr: float
     liquidity: float
-    endsAt: str
-    updatedAt: str
+    ends_at: str
+    updated_at: str
     markets: list[MarketData] = field(default_factory=list)
 
 @dataclass
@@ -43,22 +44,22 @@ class MarketData:
     title: str
     icon: str
     volume: float
-    volume24hr: float
+    volume_24hr: float
     liquidity: float
-    winPrice: float
-    updatedAt: str
+    win_price: float
+    updated_at: str
 
 
 class PolyMarketDataUpdateCoordinator(DataUpdateCoordinator[EventsData]):
     def __init__(self, hass: HomeAssistant, query: PolyMarketQuery) -> None:
-        self.queryCount: int = -100
-        self.api: PolymarketApi = PolymarketApi(query.api_url())
+        self._query: PolyMarketQuery = query
+        self._api: PolymarketApi = PolymarketApi()
 
         super().__init__(
             hass,
             logger=LOGGER,
             name=query.name(),
-            update_interval=timedelta(minutes=SCAN_INTERVAL),
+            update_interval=timedelta(minutes=query.refresh_mins()),
         )
 
         LOGGER.debug(f"Polymarket --init-- {self.name}")
@@ -71,43 +72,49 @@ class PolyMarketDataUpdateCoordinator(DataUpdateCoordinator[EventsData]):
         """
         LOGGER.debug(f"Polymarket --_async_setup-- {self.name}")
 
-        self.queryCount = 0
-
     async def _async_update_data(self) -> EventsData:
         """Do the usual update
 
         This method will be called automatically every SCAN_INTERVAL.
         """
-        LOGGER.debug(f"Polymarket {self.name} --_async_update_data-- {self.queryCount}")
+        LOGGER.debug(f"Polymarket {self.name} --_async_update_data-- {self._api.query_count()}")
 
-        self.queryCount += 1
-        json_events = await self.api.async_get_json()
+        scene, url = self._query.api_url(update_next=True)
+        json_events: dict = await self._api.async_get_json(url)
 
-        data = EventsData(queryCount=self.queryCount, timestamp=datetime.now())
+        data = EventsData(
+            scene=scene,
+            query_count=self._api.query_count(),
+            query_failed=self._api.query_failed(),
+            query_url=url, 
+            timestamp=datetime.now())
 
         for json_event in json_events:
             active = bool(json_event["active"])
-            title=json_event["title"]
-            markets = [self._update_market_data(item) for item in json_event["markets"]]
-            markets = sorted(filter(lambda m: m.volume24hr>0, markets), key=lambda entry: entry.winPrice, reverse=True)
+            endsAt = parse_str(json_event, "endDate", default=None)
 
-            data.append(EventData(
-                active=active, 
-                closed=bool(json_event["closed"]), 
-                title=title, 
-                icon=json_event["icon"], 
-                volume=parse_float(json_event, "volume", root=title), 
-                volume24hr=parse_float_if(active, json_event, "volume24hr", root=title), 
-                liquidity=parse_float_if(active, json_event, "liquidity", root=title), 
-                endsAt=json_event["endDate"], 
-                updatedAt=json_event["updatedAt"], 
-                markets=markets))
+            if active and endsAt is not None:
+                title = json_event["title"]
+                markets = [self._update_market_data(item) for item in json_event["markets"]]
+                markets = sorted(filter(lambda m: m.volume_24hr>0, markets), key=lambda entry: entry.win_price, reverse=True)
+
+                data.append(EventData(
+                    active=active,
+                    closed=bool(json_event["closed"]),
+                    title=title,
+                    icon=json_event["icon"],
+                    volume=parse_float(json_event, "volume", root=title),
+                    volume_24hr=parse_float_if(active, json_event, "volume24hr", root=title),
+                    liquidity=parse_float_if(active, json_event, "liquidity", root=title),
+                    ends_at=parse_str(json_event, "endDate", default=None),
+                    updated_at=json_event["updatedAt"],
+                    markets=markets))
 
         return data
 
     def _update_market_data(self, json_market: dict) -> MarketData:
         active = bool(json_market["active"])
-        title=json_market["groupItemTitle"]
+        title = parse_str(json_market, "groupItemTitle")
 
         return MarketData(
             active=active, 
@@ -115,7 +122,7 @@ class PolyMarketDataUpdateCoordinator(DataUpdateCoordinator[EventsData]):
             title=title,
             icon=json_market["icon"], 
             volume=parse_float(json_market, "volume"), 
-            volume24hr=parse_float_if(active, json_market, "volume24hr", root=title), 
+            volume_24hr=parse_float_if(active, json_market, "volume24hr", root=title), 
             liquidity=parse_float_if(active, json_market, "liquidityNum", root=title), 
-            winPrice=parse_float_from_list_if(active, json_market, "outcomePrices", root=title) * 100, 
-            updatedAt=json_market["updatedAt"])
+            win_price=parse_float_from_list_if(active, json_market, "outcomePrices", root=title) * 100, 
+            updated_at=json_market["updatedAt"])

@@ -4,6 +4,20 @@ import json
 
 from .const import LOGGER
 
+def parse_str_if(condition: bool, holder:dict, name:str, default="n/a", root="n/a") -> str:
+    return parse_str(holder, name, default, root) if condition else default
+
+def parse_str(holder:dict, name:str, default="n/a", root="n/a") -> str:
+    try:
+        if name in holder:
+            return str(holder[name])
+        else:
+            LOGGER.warn(f"Attribute {name} not found for {root}")
+    except:
+        return default
+
+    return default
+
 def parse_float_if(condition: bool, holder:dict, name:str, default=0.0, root="n/a") -> float:
     return parse_float(holder, name, default, root) if condition else default
 
@@ -12,7 +26,7 @@ def parse_float(holder:dict, name:str, default=0.0, root="n/a") -> float:
         if name in holder:
             return float(holder[name])
         else:
-            LOGGER.warn(f"Attributte {name} not found for {root}")
+            LOGGER.warn(f"Attribute {name} not found for {root}")
     except:
         return default
 
