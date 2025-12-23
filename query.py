@@ -11,10 +11,9 @@ from .const import (
     CONF_SCENES,
     CONF_SCENE_NAME,
     CONF_SCENE_TAG_SLUG,
-    CONF_SCENE_EXCLUDE_TAG_IDS)
-
-URL_HEAD = "http://gamma-api.polymarket.com"
-URL_EVENTS = "/events?ascending=false&order=volume24hr&active=true"
+    CONF_SCENE_EXCLUDE_TAG_IDS,
+    URL_HEAD,
+    URL_EVENTS)
 
 class PolyMarketQueryScene:
     def __init__(self, entry: ConfigEntry):

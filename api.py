@@ -16,15 +16,15 @@ USER_AGENT = (
 class PolymarketApi:
     headers: dict = {"User-Agent": USER_AGENT, "Accept": "application/ld+json"}
 
-    def __init__(self, url: str) -> None:
+    def __init__(self) -> None:
         self._query_count: int = 0
         self._query_failed: int = 0
         self._session = None
 
-    def query_count() -> int
+    def query_count(self) -> int:
         return self._query_count
 
-    def query_failed() -> int
+    def query_failed(self) -> int:
         return self._query_failed
 
     async def async_get_json(self, url: str) -> dict:

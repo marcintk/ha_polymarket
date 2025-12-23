@@ -8,7 +8,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .api import PolymarketApi
-from .const import DOMAIN, LOGGER
+from .const import LOGGER
 from .query import PolyMarketQuery
 from .utils import parse_str, parse_str_if, parse_float_if, parse_float, parse_float_from_list_if, parse_float_from_list
 
