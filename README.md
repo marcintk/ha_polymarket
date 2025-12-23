@@ -71,6 +71,6 @@ Events:
 ```
 ## Display
 
-The entity can be display, for example, with use of [button card](https://github.com/custom-cards/button-card) i.e.: 
+The entity can be displayed, for example, with use of [button card](https://github.com/custom-cards/button-card) i.e.: 
 
 ![Example of the integration display](example.png)
