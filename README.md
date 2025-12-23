@@ -69,3 +69,8 @@ Events:
         updatedAt: '2025-12-23T01:18:45.160663Z'
   - ...
 ```
+## Display
+
+The entity can be display, for example, with use of [button card](https://github.com/custom-cards/button-card) i.e.: 
+
+![Example of the integration display](example.png)
