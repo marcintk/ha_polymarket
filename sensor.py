@@ -59,7 +59,7 @@ async def async_setup_platform(
 ):
     """Set up the Polymarket sensor platform."""
 
-    LOGGER.debug(f"Polymarket --sensor-- {entry}")
+    LOGGER.debug("Polymarket --sensor-- %s.", entry)
 
     # This gets the data update coordinator from the config entry runtime data as specified in your __init__.py
     #coordinator: PolyMarketDataUpdateCoordinator = entry.runtime_data.coordinator
@@ -72,7 +72,7 @@ async def async_setup_platform(
     sensor = PolymarketSensor(coordinator, query.name(), query.unique_id())
     async_add_entities([sensor], update_before_add=False)
 
-    LOGGER.info(f"Polymarket sensor addd: {query}.")
+    LOGGER.info("Polymarket sensor addd: %s.", query)
 
 
 class PolymarketSensor(CoordinatorEntity[PolyMarketDataUpdateCoordinator], SensorEntity):

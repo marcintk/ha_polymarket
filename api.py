@@ -45,7 +45,7 @@ class PolymarketApi:
                 if response.status == HTTPStatus.OK:
                     return result_json
                 else:
-                    LOGGER.warn(
+                    LOGGER.warning(
                         "Received status %d for %s, result=%s",
                         response.status,
                         url,
@@ -54,6 +54,6 @@ class PolymarketApi:
             self._session = None
             self._query_failed += 1
 
-            LOGGER.warn("API call failed: %s", e)
+            LOGGER.warning("API call failed: %s", e)
 
         return None
