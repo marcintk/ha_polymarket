@@ -122,7 +122,7 @@ class PolyMarketDataUpdateCoordinator(DataUpdateCoordinator[EventsData]):
                 active=active, 
                 closed=bool(json_market["closed"]), 
                 title=title,
-                icon=json_market["icon"], 
+                icon=json_market.get("icon", ""),
                 volume=parse_float(json_market, "volume"), 
                 volume_24hr=parse_float(json_market, "volume24hr", root=title), 
                 liquidity=parse_float(json_market, "liquidityNum", root=title), 
